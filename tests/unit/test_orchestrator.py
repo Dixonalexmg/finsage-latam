@@ -148,9 +148,55 @@ def test_orchestrator_comparison_without_context_asks_for_key_data() -> None:
 
     assert state["intent"] == "comparison"
     assert state["recommendations"] == []
+    assert "Contexto disponible" in state["final_response"]
+    assert "Perfil detectado" not in state["final_response"]
+    assert "Ingreso liquido mensual: $0" not in state["final_response"]
     assert "Una tarjeta conviene mas" in state["final_response"]
     assert "Tu ingreso liquido mensual aproximado en CLP." in state["final_response"]
     assert "Que criterio pesa mas para ti" in state["final_response"]
+
+
+def test_orchestrator_personal_loan_with_amount_term_and_purpose_does_not_reask_purpose() -> None:
+    profile = UserProfile(
+        monthly_income=Decimal("1400000"),
+        monthly_expenses=Decimal("700000"),
+        existing_debt=Decimal("0"),
+        risk_profile=RiskProfile.MODERATE,
+        stated_goal="consolidar deudas",
+        intent="personal_loan",
+    )
+    analyst = _FakeProfileAnalyst(profile)
+    orchestrator = Orchestrator(profile_analyst=analyst, experts={})
+
+    state = orchestrator.run(
+        "Gano 1.400.000 CLP, gasto 700.000 CLP y necesito un prestamo de 6 millones "
+        "a 36 meses para consolidar deudas."
+    )
+
+    assert state["intent"] == "personal_loan"
+    assert "Si el credito es para consolidar deudas" not in state["final_response"]
+
+
+def test_orchestrator_comparison_with_tarjeta_y_prestamo_uses_general_rule_block() -> None:
+    profile = UserProfile(
+        monthly_income=Decimal("0"),
+        monthly_expenses=Decimal("0"),
+        existing_debt=Decimal("0"),
+        risk_profile=RiskProfile.MODERATE,
+        stated_goal="financiar una compra grande",
+        intent="comparison",
+    )
+    analyst = _FakeProfileAnalyst(profile)
+    orchestrator = Orchestrator(profile_analyst=analyst, experts={})
+
+    state = orchestrator.run(
+        "Quiero algo para financiar una compra grande, pero no se si me conviene "
+        "una tarjeta en cuotas o un prestamo. Serian como 3 millones y podria "
+        "pagarlo en 24 meses."
+    )
+
+    assert "Una tarjeta conviene mas" in state["final_response"]
+    assert "Un credito personal conviene mas" in state["final_response"]
 
 
 def test_orchestrator_rejects_blank_query() -> None:

@@ -169,11 +169,16 @@ def _render_response(
 
     if profile is not None:
         lines.append("")
-        lines.append("**Perfil detectado**")
-        lines.append(f"- Ingreso liquido mensual: {_fmt_money(profile.monthly_income)}")
-        lines.append(f"- Gasto mensual: {_fmt_money(profile.monthly_expenses)}")
-        lines.append(f"- Ingreso disponible: {_fmt_money(profile.disposable_income)}")
-        lines.append(f"- Objetivo declarado: {profile.stated_goal}")
+        if clarification_questions:
+            lines.append("**Contexto disponible**")
+            lines.append(f"- Intent inferido: {intent}")
+            lines.append(f"- Objetivo declarado: {profile.stated_goal}")
+        else:
+            lines.append("**Perfil detectado**")
+            lines.append(f"- Ingreso liquido mensual: {_fmt_money(profile.monthly_income)}")
+            lines.append(f"- Gasto mensual: {_fmt_money(profile.monthly_expenses)}")
+            lines.append(f"- Ingreso disponible: {_fmt_money(profile.disposable_income)}")
+            lines.append(f"- Objetivo declarado: {profile.stated_goal}")
 
     if not recommendations:
         lines.append("")
@@ -236,7 +241,8 @@ def _build_clarification_questions(
             questions.append("Cuanto dinero necesitas pedir aproximadamente.")
         if not _query_mentions_term(normalized_query):
             questions.append("A cuantos meses quieres pagar el prestamo.")
-        questions.append("Si el credito es para consolidar deudas, auto, estudio o libre uso.")
+        if not _mentions_loan_purpose(normalized_query, profile.stated_goal.lower()):
+            questions.append("Si el credito es para consolidar deudas, auto, estudio o libre uso.")
     elif intent == "comparison":
         if not _mentions_specific_products_or_categories(normalized_query):
             questions.append("Que dos alternativas quieres comparar exactamente.")
@@ -274,7 +280,9 @@ def _fallback_questions_for_unwired_intent(*, intent: Intent, query: str) -> lis
 
 def _render_clarification_block(*, intent: Intent, query: str) -> list[str]:
     normalized_query = query.lower()
-    if intent == "comparison" and "tarjeta" in normalized_query and "credito" in normalized_query:
+    if intent == "comparison" and "tarjeta" in normalized_query and (
+        "credito" in normalized_query or "prestamo" in normalized_query
+    ):
         return [
             "> Con lo que me diste solo puedo darte una regla general.",
             "> Una tarjeta conviene mas para compras recurrentes y beneficios como cashback o cuotas.",
@@ -340,6 +348,24 @@ def _query_mentions_term(query: str) -> bool:
         r"\bcuotas\b",
     )
     return any(re.search(pattern, query) for pattern in patterns)
+
+
+def _mentions_loan_purpose(query: str, stated_goal: str) -> bool:
+    haystack = f"{query} {stated_goal}"
+    keywords = (
+        "consolidar",
+        "deuda",
+        "deudas",
+        "auto",
+        "vehiculo",
+        "curso",
+        "estudio",
+        "estudios",
+        "libre uso",
+        "remodel",
+        "compra grande",
+    )
+    return any(keyword in haystack for keyword in keywords)
 
 
 def _dedupe_preserve_order(items: list[str]) -> list[str]:
