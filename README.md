@@ -38,6 +38,8 @@ La demo ya esta pensada para consultas concretas y tambien para consultas ambigu
 
 ## Demo
 
+[Demo en vivo](https://finsage-latam-production.up.railway.app/)
+
 El GIF del demo todavia no esta versionado en este workspace porque no hay una grabacion fresca del flujo completo. Apenas grabes una demo corta, puedes generar el GIF optimizado con:
 
 ```bash
@@ -50,6 +52,15 @@ Luego insertalo cerca del inicio de este README con:
 ```md
 ![Demo de FinSage LATAM](assets/demo.gif)
 ```
+
+## Estado actual del demo
+
+- `Deploy publico`: operativo en Railway
+- `URL publica`: [https://finsage-latam-production.up.railway.app/](https://finsage-latam-production.up.railway.app/)
+- `Modo LLM`: Gemini free tier
+- `Estado esperado si no hay cuota`: la UI carga, pero `/recommend` puede devolver `503` hasta que se restablezca la cuota del proveedor
+
+Eso no invalida el deploy: la parte de infraestructura, healthchecks, UI y wiring entre servicios ya queda demostrada. Cuando Gemini recupere cuota, el demo vuelve a responder sin necesidad de cambiar arquitectura.
 
 ## Metricas headline
 
@@ -154,13 +165,9 @@ Opcionales:
 
 ## Demo desplegado
 
-Agrega aqui la URL publica de Railway apenas exista el primer deploy real. Mientras no exista, el estado honesto es `pending`.
-
-Formato sugerido:
-
-```md
-[Demo en vivo](https://your-app.up.railway.app)
-```
+- `Produccion`: [https://finsage-latam-production.up.railway.app/](https://finsage-latam-production.up.railway.app/)
+- `Proveedor LLM`: Gemini API server-side
+- `Nota operativa`: si la cuota del free tier se agota, el deploy sigue online y la API devuelve un error explicito en lugar de fallar silenciosamente
 
 ## Stack
 
@@ -225,3 +232,9 @@ La historia fuerte no es solo "hice una app", sino "puedo leer un stack pedido e
 10. Grabar una demo corta y generar `assets/demo.gif`.
 11. Reemplazar el placeholder de la URL publica en este README.
 12. Preparar una publicacion de LinkedIn con: problema, stack, demo, metricas y link en vivo.
+
+## Documentacion complementaria
+
+- Deploy paso a paso: [docs/deploy_railway.md](/C:/Users/Usuario/Documents/finsage-latam/docs/deploy_railway.md)
+- ADRs: [docs/decisions.md](/C:/Users/Usuario/Documents/finsage-latam/docs/decisions.md)
+- Runbook operativo del demo: [docs/runbook_demo.md](/C:/Users/Usuario/Documents/finsage-latam/docs/runbook_demo.md)

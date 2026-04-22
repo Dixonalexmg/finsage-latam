@@ -174,6 +174,10 @@ Cuando el deploy termine:
 
 La pagina principal que debe responder es `/`, no `/health`.
 
+URL real del deploy actual:
+
+- [https://finsage-latam-production.up.railway.app/](https://finsage-latam-production.up.railway.app/)
+
 ## Paso 7: smoke test post deploy
 
 Haz estas verificaciones en este orden:
@@ -219,6 +223,12 @@ Confirma:
 - se muestra el JSON estructurado
 - el sidebar sube `Queries`, `Recomendaciones` y `Exito`
 
+Nota realista para free tier:
+
+- si Gemini no tiene cuota disponible en ese momento, la UI igual debe cargar
+- el deploy debe seguir `Online`
+- `/recommend` puede responder `503` con detalle del proveedor
+
 ## Paso 8: dejarlo listo para README y LinkedIn
 
 Cuando ya funcione la URL publica:
@@ -253,6 +263,26 @@ Usa este checklist antes de compartirlo:
    - link en vivo
 
 ## Troubleshooting rapido
+
+### El deploy queda online pero Railway no muestra dominio al principio
+
+Puede pasar que el contenedor ya este sirviendo trafico, pero el dominio bonito de Railway no aparezca inmediatamente.
+
+Que revisar:
+
+1. entra al servicio
+2. abre `Settings`
+3. busca `Networking` o `Domains`
+4. si hace falta, genera el dominio publico desde ahi
+
+Senal de que el deploy si esta vivo:
+
+- en logs veras algo como `Local URL: http://localhost:8080`
+- y una `External URL` temporal servida por el contenedor
+
+En el deploy actual, el dominio publico final quedo en:
+
+- [https://finsage-latam-production.up.railway.app/](https://finsage-latam-production.up.railway.app/)
 
 ### La UI abre pero recomendar falla
 

@@ -47,3 +47,11 @@ como se despliega, que limites tiene y que decisiones fueron deliberadas.
 - **Context:** El deploy publico no debe depender de credito prepago en Anthropic ni de que el usuario final configure su propia API key. El objetivo del portfolio es ser probado por terceros con la menor friccion posible.
 - **Decision:** El runtime productivo migra a Gemini API para generation estructurada y Gemini Embeddings para retrieval semantico. La demo publica requiere solo `GEMINI_API_KEY`, mantenida del lado del servidor, y usa modelos orientados a free tier (`gemini-2.5-flash-lite` y `gemini-embedding-001`).
 - **Consequences:** La demo sigue consultando un LLM real, pero con una historia de costo y disponibilidad mucho mas favorable para portfolio. Tambien queda mas simple el setup operativo: una sola clave para generation y embeddings. Si la cuota gratuita se agota, la API expone el problema con un error explicito en vez de ocultarlo como fallo interno del orchestrator.
+
+## ADR-005: Respuesta de aclaracion antes de recomendar cuando faltan datos criticos
+
+- **Status:** Accepted
+- **Date:** 2026-04-22
+- **Context:** En consultas ambiguas como "quiero una tarjeta" o "que es mejor una tarjeta o un prestamo", responder con "no hay recomendaciones disponibles" degrada la experiencia y hace que la demo parezca fragil. Para portfolio, el sistema debe comportarse como un producto conversacional maduro y no como un pipeline que solo funciona con input perfecto.
+- **Decision:** Cuando faltan datos criticos para una recomendacion responsable, el orchestrator no inventa productos ni devuelve un vacio. En su lugar responde con una orientacion preliminar y una lista minima de datos faltantes para avanzar, por ejemplo ingreso, gastos, monto, plazo o criterio principal de comparacion.
+- **Consequences:** La demo se vuelve mas robusta ante queries reales y ambiguas, mejora la experiencia en entrevistas y reduce el riesgo de alucinaciones. Tambien introduce una distincion deliberada entre "recomendacion final" y "respuesta de aclaracion", lo que hace mas honesta la UX del sistema.
