@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "src.deploy", "--service", "api"]
+    environment:
+      PORT: "8000"
+      FINSAGE_API_HOST: "0.0.0.0"
+      FINSAGE_API_PORT: "8000"
+      FINSAGE_CORS_ALLOW_ORIGINS: "http://localhost:8501"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      VOYAGE_API_KEY: "${VOYAGE_API_KEY:-}"
+      LOGFIRE_TOKEN: "${LOGFIRE_TOKEN:-}"
+    ports:
+      - "8000:8000"
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "src.deploy", "--service", "ui"]
+    depends_on:
+      - api
+    environment:
+      PORT: "8501"
+      FINSAGE_API_URL: "http://localhost:8000"
+    ports:
+      - "8501:8501"
