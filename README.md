@@ -21,6 +21,21 @@ No es un chatbot generico. Es una demo de toma de decisiones financieras con age
 - `Modo demo free tier`: la ruta principal usa Gemini API y Gemini embeddings con una sola clave server-side.
 - `Deploy listo`: incluye `Dockerfile`, `docker-compose.yml`, `railway.toml` y launcher dedicado.
 
+## Casos de uso cubiertos
+
+La demo ya esta pensada para consultas concretas y tambien para consultas ambiguas donde primero hay que pedir mejores datos. Ejemplos:
+
+1. Elegir una tarjeta con cashback para compras diarias.
+2. Elegir una tarjeta para viajes, lounge o millas.
+3. Buscar una tarjeta con baja comision anual.
+4. Buscar una tarjeta premium segun renta y beneficios.
+5. Pedir un prestamo personal para consolidar deudas.
+6. Pedir un prestamo para un monto y plazo especificos.
+7. Comparar tarjeta versus prestamo personal para una necesidad puntual.
+8. Comparar dos productos concretos cuando el usuario los nombre.
+9. Guiar al usuario cuando todavia no sabe si necesita tarjeta, prestamo o comparacion.
+10. Explicar que datos faltan para recomendar con precision sin inventar una respuesta cerrada.
+
 ## Demo
 
 El GIF del demo todavia no esta versionado en este workspace porque no hay una grabacion fresca del flujo completo. Apenas grabes una demo corta, puedes generar el GIF optimizado con:

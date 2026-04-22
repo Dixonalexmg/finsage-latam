@@ -128,7 +128,29 @@ def test_orchestrator_returns_empty_recommendations_when_intent_has_no_expert() 
 
     assert state["intent"] == "personal_loan"
     assert state["recommendations"] == []
-    assert "No hay recomendaciones disponibles" in state["final_response"]
+    assert "Para darte una mejor respuesta" in state["final_response"]
+    assert "Cuanto dinero necesitas pedir" in state["final_response"]
+
+
+def test_orchestrator_comparison_without_context_asks_for_key_data() -> None:
+    profile = UserProfile(
+        monthly_income=Decimal("0"),
+        monthly_expenses=Decimal("0"),
+        existing_debt=Decimal("0"),
+        risk_profile=RiskProfile.MODERATE,
+        stated_goal="comparar",
+        intent="comparison",
+    )
+    analyst = _FakeProfileAnalyst(profile)
+    orchestrator = Orchestrator(profile_analyst=analyst, experts={})
+
+    state = orchestrator.run("Que es mejor una tarjeta o un credito personal?")
+
+    assert state["intent"] == "comparison"
+    assert state["recommendations"] == []
+    assert "Una tarjeta conviene mas" in state["final_response"]
+    assert "Tu ingreso liquido mensual aproximado en CLP." in state["final_response"]
+    assert "Que criterio pesa mas para ti" in state["final_response"]
 
 
 def test_orchestrator_rejects_blank_query() -> None:
@@ -161,6 +183,8 @@ def test_render_response_handles_profile_caveats_and_rank_sorting() -> None:
         profile=profile,
         intent="credit_card",
         recommendations=[lower, higher],
+        query="Quiero cashback",
+        clarification_questions=[],
     )
 
     assert rendered.index("### 1.") < rendered.index("### 2.")
