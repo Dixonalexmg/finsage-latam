@@ -22,7 +22,7 @@ from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from typing import Annotated, Any, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from src.agents.base import BaseAgent, StructuredLLMClient
 from src.models.schemas import (
@@ -54,6 +54,24 @@ ConclusionText = Annotated[str, Field(min_length=1, max_length=220)]
 RejectReasonText = Annotated[str, Field(min_length=1, max_length=120)]
 
 
+def _clamp_text(value: object, *, max_length: int) -> object:
+    if not isinstance(value, str):
+        return value
+    text = " ".join(value.split()).strip()
+    if len(text) <= max_length:
+        return text
+    if max_length <= 1:
+        return text[:max_length]
+    return f"{text[: max_length - 1].rstrip()}…"
+
+
+def _as_clean_key(value: object) -> str:
+    if isinstance(value, str):
+        cleaned = " ".join(value.split()).strip()
+        return cleaned[:120] or "unknown_product"
+    return "unknown_product"
+
+
 class Retriever(Protocol):
     """Subset minimo del retriever que usa el experto."""
 
@@ -73,6 +91,18 @@ class ReasoningStepDraft(BaseModel):
         description="Evidencia concreta y breve: product_ids, tasas o umbrales.",
     )
 
+    @field_validator("description", mode="before")
+    @classmethod
+    def _truncate_description(cls, value: object) -> object:
+        return _clamp_text(value, max_length=140)
+
+    @field_validator("evidence", mode="before")
+    @classmethod
+    def _truncate_evidence(cls, value: object) -> object:
+        if not isinstance(value, list):
+            return value
+        return [_clamp_text(item, max_length=80) for item in value[:MAX_EVIDENCE_PER_STEP]]
+
 
 class ReasoningTraceDraft(BaseModel):
     """Traza emitida por el LLM, sin ``agent_name`` ni ``model``."""
@@ -90,6 +120,28 @@ class ReasoningTraceDraft(BaseModel):
         description="Mapa `product_id` -> motivo de descarte.",
     )
     final_conclusion: ConclusionText = Field(...)
+
+    @field_validator("considered_products", mode="before")
+    @classmethod
+    def _truncate_considered_products(cls, value: object) -> object:
+        if not isinstance(value, list):
+            return value
+        return [_clamp_text(item, max_length=120) for item in value[:MAX_CONSIDERED_PRODUCTS]]
+
+    @field_validator("rejected_products", mode="before")
+    @classmethod
+    def _truncate_rejected_products(cls, value: object) -> object:
+        if not isinstance(value, dict):
+            return value
+        return {
+            _as_clean_key(key): _clamp_text(reason, max_length=120)
+            for key, reason in list(value.items())[:MAX_CONSIDERED_PRODUCTS]
+        }
+
+    @field_validator("final_conclusion", mode="before")
+    @classmethod
+    def _truncate_final_conclusion(cls, value: object) -> object:
+        return _clamp_text(value, max_length=220)
 
 
 class RecommendationDraft(BaseModel):
@@ -110,6 +162,23 @@ class RecommendationDraft(BaseModel):
     )
     caveats: list[ShortText] = Field(default_factory=list, max_length=MAX_CAVEATS)
     reasoning_trace: ReasoningTraceDraft
+
+    @field_validator("product_id", mode="before")
+    @classmethod
+    def _truncate_product_id(cls, value: object) -> object:
+        return _clamp_text(value, max_length=120)
+
+    @field_validator("why_this_fits", mode="before")
+    @classmethod
+    def _truncate_why_this_fits(cls, value: object) -> object:
+        return _clamp_text(value, max_length=240)
+
+    @field_validator("caveats", mode="before")
+    @classmethod
+    def _truncate_caveats(cls, value: object) -> object:
+        if not isinstance(value, list):
+            return value
+        return [_clamp_text(item, max_length=140) for item in value[:MAX_CAVEATS]]
 
 
 class ExpertRanking(BaseModel):

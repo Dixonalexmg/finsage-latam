@@ -312,3 +312,37 @@ def test_product_expert_rejects_non_positive_top_n() -> None:
             product_type_label="x",
             top_n=0,
         )
+
+
+def test_loan_expert_truncates_long_rejected_product_reasons(mocker: Any) -> None:
+    loans = [
+        _loan("loan_x", cae=0.20, tea=0.18),
+        _loan("loan_y", cae=0.28, tea=0.24),
+    ]
+    retriever = _FakeRetriever(["loan_x", "loan_y"])
+    client = mocker.MagicMock()
+    long_reason = (
+        "La cuota estimada para un monto significativo podria superar el 30% del ingreso "
+        "disponible si se elige un plazo muy corto y tensionar demasiado el flujo mensual."
+    )
+    client.generate_json.return_value = json.dumps(
+        {
+            "recommendations": [
+                _make_draft(
+                    "loan_x",
+                    rank=1,
+                    match_score=0.92,
+                    considered=["loan_x", "loan_y"],
+                    rejected={"loan_y": long_reason},
+                )
+            ]
+        }
+    )
+
+    expert = LoanExpert(retriever=retriever, loans=loans, client=client)
+    recs = expert.recommend(_profile(intent="personal_loan", goal="Necesito 6M a 36 meses"))
+
+    assert len(recs) == 1
+    rejected_reason = recs[0].reasoning_trace.rejected_products["loan_y"]
+    assert len(rejected_reason) <= 120
+    assert rejected_reason.startswith("La cuota estimada")
